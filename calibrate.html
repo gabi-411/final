@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     calibrate.html — режим калибровки карты (для разработчика).
+     • Тап по карте → координаты x, y в пикселях campus-map.jpg
+       (для меток PLACES и узлов графа NODES в data.js).
+     • «Включить GPS» → текущие lat/lng и точность.
+     • «Добавить контрольную точку» = последний тап + усреднённый GPS.
+       Из 3+ точек считается привязка, ошибка на каждой точке и масштаб
+       м/px; готовый массив GEO_CONTROL_POINTS копируется в data.js.
+     Ничего не сохраняется и не отправляется: всё только в памяти страницы.
+     Открывать по HTTPS (GitHub Pages) — иначе браузер не даст GPS.
+     ===================================================================== -->
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Калибровка карты — SDU Freshman</title>
+  <meta name="robots" content="noindex" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { padding-bottom: 24px; }
+    .cal { max-width: 760px; margin: 0 auto; padding: 12px; }
+    .cal h1 { font-size: 18px; color: var(--navy); }
+    .cal .map-view { height: 58vh; }
+    .cal-grid { display: grid; gap: 10px; grid-template-columns: 1fr; }
+    .cal-out { font-family: ui-monospace, Consolas, monospace; font-size: 14px; word-break: break-word; white-space: pre-line; }
+    .cal-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: center; }
+    .cal textarea { width: 100%; min-height: 150px; font-family: ui-monospace, Consolas, monospace; font-size: 12px;
+                    border: 1px solid #cbd5e1; border-radius: 12px; padding: 8px; }
+    .cal table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .cal td, .cal th { border-bottom: 1px solid #e2e8f0; padding: 4px; text-align: left; }
+    .tap-mark { width: 16px; height: 16px; border-radius: 50%;
+                background: #f59e0b; border: 3px solid #fff; box-shadow: 0 0 0 2px #b45309; }
+    .node-label { font: 10px/1 ui-monospace, Consolas, monospace; color: #7c2d12; background: rgba(255,255,255,.8);
+                  padding: 1px 3px; border-radius: 4px; white-space: nowrap; }
+    .cp-mark { font-size: 18px; line-height: 1; }
+    @media (min-width: 720px) { .cal-grid { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="cal">
+    <h1>Калибровка карты (для разработчика)</h1>
+    <p class="note">Тапните на карте: увидите x, y в пикселях картинки. Для контрольных точек встаньте в узнаваемое место
+      (угол здания, вход), включите GPS, дождитесь точности ≤ 5–10 м, тапните это место на карте и нажмите «Добавить точку».
+      Нужно 3+ точки, лучше 4–6 по разным краям кампуса. <a href="./">← в приложение</a></p>
+
+    <div class="card map-card"><div id="calMap" class="map-view"></div></div>
+
+    <div class="cal-grid">
+      <div class="card">
+        <h3>Тап по карте</h3>
+        <p class="cal-out" id="tapOut">—</p>
+        <div class="cal-row">
+          <button type="button" class="btn btn--ghost btn--sm" id="copyNode">Копировать как узел NODES</button>
+          <label><input type="checkbox" id="showGraph" style="width:auto" /> показать граф (узлы и рёбра)</label>
+        </div>
+      </div>
+      <div class="card">
+        <h3>GPS</h3>
+        <p class="cal-out" id="gpsOut">выключен</p>
+        <p class="note" id="gpsMapOut"></p>
+        <div class="cal-row">
+          <button type="button" class="btn btn--primary btn--sm" id="gpsBtn">Включить GPS</button>
+          <button type="button" class="btn btn--gold btn--sm" id="addPoint">Добавить контрольную точку</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Контрольные точки</h3>
+      <table><thead><tr><th>#</th><th>x, y</th><th>lat, lng</th><th>±м</th><th>ошибка, px</th><th></th></tr></thead>
+        <tbody id="cpBody"></tbody></table>
+      <p class="note" id="fitOut">Добавьте минимум 3 точки, не на одной прямой.</p>
+      <textarea id="snippet" readonly aria-label="Код для data.js"></textarea>
+      <div class="cal-row">
+        <button type="button" class="btn btn--primary btn--sm" id="copySnippet">Копировать для data.js</button>
+        <button type="button" class="btn btn--ghost btn--sm" id="loadCurrent">Загрузить точки из data.js</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="logic.js"></script>
+  <script src="map.js"></script>
+  <script src="calibrate.js"></script>
+</body>
+</html>

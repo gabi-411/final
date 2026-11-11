@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<!-- =====================================================================
+     index.html — SDU Freshman (PWA для первокурсников SDU)
+     Одна страница (SPA): 4 вкладки переключаются через script.js
+     ===================================================================== -->
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>SDU Freshman</title>
+  <meta name="description" content="Приложение для первокурсников SDU: карта кампуса, расписание, отзывы и FAQ." />
+
+  <!-- PWA: манифест, цвет браузера, иконки для iPhone -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1e3a8a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SDU Freshman" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="icon" href="icons/icon-192.png" type="image/png" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ============ ШАПКА ============ -->
+  <header class="topbar">
+    <h1 class="topbar__title">SDU Freshman</h1>
+  </header>
+
+  <main class="content">
+
+    <!-- ============ ВКЛАДКА 1: КАРТА ============ -->
+    <section id="tab-map" class="tab tab--active" aria-label="Карта и навигатор">
+      <h2 class="section-title">Карта</h2>
+
+      <!-- Две колонки на ПК (карта | поиск и панели), одна колонка на телефоне -->
+      <div class="map-layout">
+      <div class="map-layout__search">
+      <form id="searchForm" class="search" autocomplete="off">
+        <input id="searchInput" type="search" list="searchSuggest"
+               placeholder="G101, B202, Библиотека" aria-label="Поиск аудитории" />
+        <datalist id="searchSuggest"></datalist>
+        <button type="submit" class="btn btn--primary">Найти</button>
+      </form>
+
+      <!-- Быстрые локации (одна строка с прокруткой пальцем, чтобы карта была выше) -->
+      <div class="chips chips--scroll" id="quickPlaces" aria-label="Частые локации"></div>
+      </div>
+
+      <!-- Интерактивная карта без библиотек: pan, pinch, двойной тап,
+           колесо мыши и кнопки. map.js рисует SVG и HTML по data.js. -->
+      <div class="card map-card">
+        <div class="map-view" id="campusMap" role="region" aria-label="Карта кампуса SDU"></div>
+        <!-- Строка состояния: откуда взято положение пользователя -->
+        <div id="locStatus" class="loc-status" aria-live="polite">Положение не определено.</div>
+        <div id="pickHint" class="pick-hint" hidden>
+          Нажмите, где вы стоите.
+          <button type="button" id="pickCancel" class="btn btn--ghost btn--sm">Отмена</button>
+        </div>
+        <p class="note">Карта приблизительная.</p>
+      </div>
+
+      <div class="map-layout__side">
+      <!-- Карточка маршрута «Как пройти» -->
+      <div id="routeCard" class="card route-card" aria-live="polite" aria-label="Информация о выбранном объекте">
+        <div class="route-card__header"><span class="route-card__handle" aria-hidden="true"></span><h3>Объект кампуса</h3><button type="button" id="closeDetails" class="route-card__close" aria-label="Закрыть карточку объекта" title="Закрыть">×</button></div>
+        <p id="routeText">Введите аудиторию или нажмите на блок.</p>
+        <div class="route-actions">
+          <button type="button" id="routeBtn" class="btn btn--primary" hidden>Проложить</button>
+          <button type="button" id="routeClear" class="btn btn--ghost" hidden>Убрать</button>
+        </div>
+        <p id="routeSummary" class="route-summary" hidden></p>
+        <ol id="routeSteps" class="route-steps" hidden></ol>
+      </div>
+
+      <!-- Панель «моё положение»: GPS, ручной выбор, этаж -->
+      <div class="card loc-panel">
+        <h3>Я здесь</h3>
+        <div class="loc-panel__row">
+          <button type="button" id="locateBtn2" class="btn btn--primary btn--sm">Где я (GPS)</button>
+          <button type="button" id="hereBtn2" class="btn btn--ghost btn--sm">Указать на карте</button>
+          <button type="button" id="useGpsBtn" class="btn btn--ghost btn--sm" hidden>Использовать GPS</button>
+        </div>
+        <select id="hereSelect" aria-label="Выбрать своё местоположение из списка">
+          <option value="">Или выберите место</option>
+        </select>
+        <div class="chips" aria-label="Я нахожусь на этаже">
+          <span class="chips__label">Мой этаж:</span>
+          <button type="button" class="chip myfloor-btn chip--active" data-floor="1">1</button>
+          <button type="button" class="chip myfloor-btn" data-floor="2">2</button>
+          <button type="button" class="chip myfloor-btn" data-floor="3A">3A</button>
+          <button type="button" class="chip myfloor-btn" data-floor="3B">3B</button>
+          <button type="button" class="chip myfloor-btn" data-floor="4">4</button>
+        </div>
+      </div>
+
+      <!-- Выбор этажа для списка аудиторий (у каждого блока 4 этажа, 3-й делится на 3A и 3B) -->
+      <div class="card floor-panel">
+      <h3>Аудитории</h3>
+      <div class="chips" aria-label="Этажи">
+        <span class="chips__label">Этаж:</span>
+        <button type="button" class="chip floor-btn chip--active" data-floor="1">1</button>
+        <button type="button" class="chip floor-btn" data-floor="2">2</button>
+        <button type="button" class="chip floor-btn" data-floor="3A">3A</button>
+        <button type="button" class="chip floor-btn" data-floor="3B">3B</button>
+        <button type="button" class="chip floor-btn" data-floor="4">4</button>
+      </div>
+      <p id="floorHint" class="note">Выберите блок на карте.</p>
+      <div class="chips" id="floorRooms" aria-label="Аудитории этажа"></div>
+      </div>
+      </div><!-- /map-layout__side -->
+      </div><!-- /map-layout -->
+    </section>
+
+    <!-- ============ ВКЛАДКА 2: МОЙ SDU ============ -->
+    <section id="tab-my" class="tab" aria-label="Мой SDU">
+      <h2 class="section-title">Мой SDU</h2>
+
+      <div class="portal-grid">
+        <a class="card portal" href="https://my.sdu.edu.kz" target="_blank" rel="noopener noreferrer">
+          <h3>my.sdu.edu.kz</h3>
+          <p>Кабинет и оценки</p>
+          <span class="portal__go">Открыть →</span>
+        </a>
+        <a class="card portal" href="https://moodle.sdu.edu.kz" target="_blank" rel="noopener noreferrer">
+          <h3>moodle.sdu.edu.kz</h3>
+          <p>Материалы и ДЗ</p>
+          <span class="portal__go">Открыть →</span>
+        </a>
+      </div>
+
+      <h3 class="section-sub">Расписание</h3>
+      <div id="schedule" class="schedule"></div>
+
+      <!-- Форма добавления пары (сохраняется в localStorage) -->
+      <form id="lessonForm" class="card lesson-form">
+        <h4>Добавить пару</h4>
+        <div class="lesson-form__grid">
+          <select id="lfDay" aria-label="День">
+            <option value="1">Пн</option><option value="2">Вт</option><option value="3">Ср</option>
+            <option value="4">Чт</option><option value="5">Пт</option>
+          </select>
+          <input id="lfTime" placeholder="09:00–10:50" aria-label="Время" />
+          <input id="lfSubject" placeholder="Предмет" aria-label="Предмет" />
+          <input id="lfRoom" placeholder="Аудитория" aria-label="Аудитория" />
+          <input id="lfTeacher" placeholder="Преподаватель" aria-label="Преподаватель" />
+        </div>
+        <div class="lesson-form__actions">
+          <button type="submit" class="btn btn--primary">Добавить</button>
+          <button type="button" id="resetSchedule" class="btn btn--ghost">Сбросить</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ============ ВКЛАДКА 3: ОТЗЫВЫ ============ -->
+    <section id="tab-reviews" class="tab" aria-label="Отзывы о преподавателях">
+      <h2 class="section-title">Отзывы</h2>
+      <div class="card review-head">
+        <h3>review.javazhan.tech</h3>
+        <a class="btn btn--primary" href="https://review.javazhan.tech" target="_blank" rel="noopener noreferrer">Открыть сайт</a>
+      </div>
+
+      <!-- Пробуем встроить сайт. Если не загрузился — скрипт покажет запасной блок -->
+      <div id="reviewFrameWrap" class="frame-wrap">
+        <div id="reviewLoading" class="note">Загрузка отзывов…</div>
+        <iframe id="reviewFrame" title="Отзывы о преподавателях SDU" loading="lazy" hidden></iframe>
+      </div>
+
+      <!-- Запасной вариант -->
+      <div id="reviewFallback" class="card" hidden>
+        <h3>Не загрузилось</h3>
+        <p>Откройте сайт кнопкой выше.</p>
+        <input id="teacherSearch" type="search" placeholder="Преподаватель" aria-label="Поиск преподавателя" />
+        <ul id="teacherList" class="teacher-list"></ul>
+      </div>
+    </section>
+
+    <!-- ============ ВКЛАДКА 4: FAQ ============ -->
+    <section id="tab-faq" class="tab" aria-label="FAQ и гид первокурсника">
+      <h2 class="section-title">FAQ</h2>
+      <input id="faqSearch" class="faq-search" type="search" placeholder="Поиск" aria-label="Поиск по FAQ" />
+      <div id="faqList" class="accordion"></div>
+      <p id="faqEmpty" class="note" hidden>Ничего не найдено.</p>
+
+      <h3 class="section-sub">Сленг</h3>
+      <dl id="slangList" class="slang"></dl>
+    </section>
+
+  </main>
+
+  <!-- ============ НИЖНЯЯ НАВИГАЦИЯ ============ -->
+  <nav class="bottom-nav" aria-label="Основная навигация">
+    <button class="nav-btn nav-btn--active" data-tab="tab-map"><svg class="nav-btn__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg>Карта</button>
+    <button class="nav-btn" data-tab="tab-my"><svg class="nav-btn__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Мой SDU</button>
+    <button class="nav-btn" data-tab="tab-reviews"><svg class="nav-btn__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2-5.5-2.9-5.5 2.9 1-6.2L3 9.6l6.2-.9z"/></svg>Отзывы</button>
+    <button class="nav-btn" data-tab="tab-faq"><svg class="nav-btn__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg>FAQ</button>
+  </nav>
+
+  <!-- Порядок важен: данные → логика → нативная карта → интерфейс -->
+  <script src="data.js"></script>
+  <script src="logic.js"></script>
+  <script src="map.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

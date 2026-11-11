@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SDU Freshman — тесты</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 24px auto; padding: 0 16px; }
+    li { margin: 4px 0; } .ok { color: #15803d; } .fail { color: #b91c1c; }
+  </style>
+</head>
+<body>
+  <h1>Автотесты SDU Freshman</h1>
+  <p id="summary"></p>
+  <ul id="out"></ul>
+  <script src="data.js"></script>
+  <script src="logic.js"></script>
+  <script src="tests.js"></script>
+  <script>
+    const r = window.SDU_TEST_RESULTS;
+    document.getElementById("summary").textContent = r.passed + " из " + r.results.length + " тестов пройдено";
+    r.results.forEach(function (t) {
+      const li = document.createElement("li");
+      li.className = t.ok ? "ok" : "fail";
+      li.textContent = (t.ok ? "✔ " : "✘ ") + t.name + (t.ok ? "" : " — " + t.error);
+      document.getElementById("out").appendChild(li);
+    });
+  </script>
+</body>
+</html>
